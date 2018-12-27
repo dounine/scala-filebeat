@@ -1,0 +1,84 @@
+version = '0.0.1-SNAPSHOT'
+
+buildscript {
+	repositories {
+		maven {
+			url "https://plugins.gradle.org/m2/"
+		}
+	}
+	dependencies {
+		classpath "com.github.jengelman.gradle.plugins:shadow:2.0.4"
+	}
+}
+
+apply plugin: "com.github.johnrengelman.shadow"
+
+apply plugin: 'scala'
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+group 'cn.starsriver.readygo'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+def env = hasProperty("pro") ? "RELEASE":"SNAPSHOT"
+sourceSets {
+	main {
+		resources {
+			srcDirs = ["src/main/resources", "src/main/profile/$env"]
+		}
+	}
+}
+
+publishing {
+	publications {
+		maven(MavenPublication) {
+			groupId = 'com.dounine.scala'
+			artifactId = 'filebeat'
+			version = '1.0.0-SNAPSHOT'
+
+			from components.java
+
+		}
+	}
+	repositories {
+		maven {
+			url = "https://oss.sonatype.org/content/repositories/snapshots/"
+			credentials {
+				username 'dounine'
+				password ''
+			}
+		}
+	}
+}
+
+jar {
+	manifest {
+		attributes 'Implementation-Title': 'ScalaFilebeat',
+				'Implementation-Version': version,
+				'Main-Class': 'cn.starsriver.readygo.analysis.App'
+	}
+}
+
+shadowJar {
+	zip64 true
+}
+repositories {
+	mavenLocal()
+	mavenCentral()
+}
+
+configure(install.repositories.mavenInstaller) {
+	pom.project {
+		groupId 'com.dounine.scala.filebeat'
+		artifactId project.name
+		packaging 'jar'
+	}
+}
+
+dependencies {
+	compile 'org.scala-lang:scala-library:2.11.12'
+
+	compile group: 'commons-io', name: 'commons-io', version: '2.6'
+	compile group: 'com.google.guava', name: 'guava', version: '27.0.1-jre'
+
+}
