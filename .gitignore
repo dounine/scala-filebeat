@@ -1,0 +1,7 @@
+.idea/
+filebeat/
+out/
+logdir*
+build/
+*.iml
+.gradle/
