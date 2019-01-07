@@ -1,24 +1,11 @@
-version = '0.0.1-SNAPSHOT'
+group = 'com.dounine.scala'
+version = '1.0.0'
 
-buildscript {
-	repositories {
-		maven {
-			url "https://plugins.gradle.org/m2/"
-		}
-	}
-	dependencies {
-		classpath "com.github.jengelman.gradle.plugins:shadow:2.0.4"
-	}
-}
-
-apply plugin: "com.github.johnrengelman.shadow"
-
+apply plugin: 'java-library'
+apply plugin: 'signing'
 apply plugin: 'scala'
-apply plugin: 'maven'
 apply plugin: 'maven-publish'
-group 'cn.starsriver.readygo'
 sourceCompatibility = 1.8
-targetCompatibility = 1.8
 
 def env = hasProperty("pro") ? "RELEASE":"SNAPSHOT"
 sourceSets {
@@ -28,24 +15,62 @@ sourceSets {
 		}
 	}
 }
+task sourcesJar(type: Jar) {
+	from sourceSets.main.allJava
+	classifier = 'sources'
+}
 
+task javadocJar(type: Jar) {
+	from javadoc
+	classifier = 'javadoc'
+}
+task signJars (type : Sign, dependsOn: [jar, javadocJar, sourcesJar]) {
+	sign configurations.archives
+}
+task preparePublish(dependsOn: signJars)
 publishing {
 	publications {
-		maven(MavenPublication) {
-			groupId = 'com.dounine.scala'
-			artifactId = 'filebeat'
-			version = '1.0.0-SNAPSHOT'
+		mavenJava(MavenPublication) {
+			artifactId = 'scala-filebeat'
 
 			from components.java
 
+			artifact sourcesJar
+			artifact javadocJar
+
+			pom {
+				name = 'scala-filebeat'
+				description = 'scala version filebeat'
+				url = 'https://github.com/dounine/scala-filebeat'
+				licenses {
+					license {
+						name = 'The Apache License, Version 2.0'
+						url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+				developers {
+					developer {
+						id = 'lake'
+						name = 'lake'
+						email = NEXUS_EMAIL
+					}
+				}
+				scm {
+					connection = 'scm:git:git://github.com/dounine/scala-filebeat.git'
+					developerConnection = 'scm:git:ssh://github.com/dounine/scala-filebeat.git'
+					url = 'https://github.com/dounine/scala-filebeat'
+				}
+			}
 		}
 	}
 	repositories {
 		maven {
-			url = "https://oss.sonatype.org/content/repositories/snapshots/"
+			def releasesRepoUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+			def snapshotsRepoUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+			url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
 			credentials {
-				username 'dounine'
-				password ''
+				username NEXUS_USERNAME
+				password NEXUS_PASSWORD
 			}
 		}
 	}
@@ -54,29 +79,27 @@ publishing {
 jar {
 	manifest {
 		attributes 'Implementation-Title': 'ScalaFilebeat',
-				'Implementation-Version': version,
-				'Main-Class': 'cn.starsriver.readygo.analysis.App'
+				'Implementation-Version': version
 	}
 }
 
-shadowJar {
-	zip64 true
+signing {
+	sign publishing.publications.mavenJava
 }
+
+
 repositories {
 	mavenLocal()
 	mavenCentral()
 }
 
-configure(install.repositories.mavenInstaller) {
-	pom.project {
-		groupId 'com.dounine.scala.filebeat'
-		artifactId project.name
-		packaging 'jar'
-	}
-}
-
 dependencies {
 	compile 'org.scala-lang:scala-library:2.11.12'
+	testCompile group: 'org.scalatest', name: 'scalatest_2.12', version: '3.0.5'
+
+	compile group: 'org.json4s', name: 'json4s-jackson_2.12', version: '3.6.3'
+	compile group: 'org.json4s', name: 'json4s-native_2.12', version: '3.6.3'
+
 
 	compile group: 'commons-io', name: 'commons-io', version: '2.6'
 	compile group: 'com.google.guava', name: 'guava', version: '27.0.1-jre'

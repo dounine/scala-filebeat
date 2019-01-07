@@ -39,13 +39,14 @@ case class Job(
                 compression: Boolean,
                 workPath: String,
                 splitLine: String,
+                logDeques: Int,
                 logPaths: Array[String],
                 recursive: Boolean,
                 intervalFileStatus: String,
                 intervalScanFile: String,
                 dirFilter: IOFileFilter,
                 fileFilter: IOFileFilter,
-                linesBlockQueue: LinkedBlockingDeque[String],
+                linesBlockQueue: LinkedBlockingDeque[(String, String)],
                 handlerFiles: LoadingCache[String, File],
                 seekDB: LoadingCache[String, java.lang.Long], //文件索引缓存
                 appendLog: AppendLog
